@@ -2,233 +2,221 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Black Digital Bank v3.0</title>
+    <title>Cloud Black Bank Online</title>
     <style>
-        :root { --green: #00ff41; --bg: #050505; --card-bg: #111; --gold: #ffd700; --platinum: #e5e4e2; }
+        :root { --green: #00ff41; --bg: #050505; --card-bg: #111; --gold: #ffd700; }
         body { background: var(--bg); color: var(--green); font-family: 'Consolas', monospace; display: flex; justify-content: center; min-height: 100vh; margin: 0; }
         .hidden { display: none !important; }
+        .container { width: 420px; padding: 20px; }
+        .bank-ui { border: 1px solid var(--green); padding: 25px; border-radius: 15px; background: #000; box-shadow: 0 0 20px rgba(0,255,65,0.1); }
         
-        .container { width: 450px; padding: 20px; }
-        .bank-ui { border: 1px solid var(--green); padding: 20px; border-radius: 10px; background: #000; box-shadow: 0 0 30px rgba(0,255,65,0.1); }
+        /* Дизайн карты */
+        .card-visual { background: linear-gradient(135deg, #1a1a1a, #000); border: 2px solid #333; border-radius: 15px; padding: 20px; margin-bottom: 20px; position: relative; color: #fff; }
+        .card-num { font-size: 1.2rem; margin: 15px 0; letter-spacing: 2px; color: var(--green); }
         
-        .card-visual { 
-            background: linear-gradient(135deg, #1a1a1a, #000); 
-            border: 2px solid #333; border-radius: 15px; padding: 20px; 
-            margin-bottom: 20px; position: relative; color: #fff;
-            transition: 0.5s;
-        }
-        .level-badge { position: absolute; top: 15px; right: 20px; font-size: 0.7rem; padding: 3px 8px; border: 1px solid; border-radius: 5px; }
-        .card-num { font-size: 1.3rem; margin: 20px 0 10px; letter-spacing: 3px; }
-        
-        .balance-section { text-align: center; margin: 20px 0; }
-        #balance { font-size: 3rem; text-shadow: 0 0 10px var(--green); }
+        #balance { font-size: 2.8rem; text-align: center; margin: 15px 0; font-weight: bold; }
+        .status { font-size: 0.6rem; text-align: center; margin-bottom: 10px; color: #444; }
 
-        button { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 12px; cursor: pointer; width: 100%; margin: 5px 0; font-family: inherit; transition: 0.1s; text-transform: uppercase; font-weight: bold; }
-        button:hover { background: var(--green); color: #000; }
-        button:active { transform: scale(0.98); }
-        input { background: #000; border: 1px solid #333; color: var(--green); padding: 10px; width: calc(100% - 22px); margin: 5px 0; outline: none; }
-        input:focus { border-color: var(--green); }
+        button { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 12px; cursor: pointer; width: 100%; margin: 5px 0; font-family: inherit; font-weight: bold; transition: 0.2s; }
+        button:hover:not(:disabled) { background: var(--green); color: #000; box-shadow: 0 0 10px var(--green); }
+        button:disabled { opacity: 0.3; cursor: wait; }
 
-        .history-box { height: 150px; border: 1px solid #222; margin-top: 15px; overflow-y: auto; font-size: 0.75rem; padding: 10px; background: #080808; }
-        .hist-item { border-bottom: 1px solid #111; padding: 5px 0; display: flex; justify-content: space-between; }
+        input { background: #000; border: 1px solid #333; color: var(--green); padding: 12px; width: calc(100% - 26px); margin: 8px 0; outline: none; }
+        .history-box { height: 100px; border: 1px solid #111; margin-top: 15px; overflow-y: auto; font-size: 0.7rem; padding: 10px; background: #050505; }
         .plus { color: var(--green); } .minus { color: #ff4444; }
-
-        .market { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .market button { font-size: 0.7rem; padding: 8px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="auth-screen" class="bank-ui">
-        <h2 style="text-align:center">SECURE LOGIN</h2>
+        <h2 style="text-align:center">CLOUD TERMINAL</h2>
+        <div class="status" id="cloud-status">ОЖИДАНИЕ АВТОРИЗАЦИИ</div>
         <input type="text" id="username" placeholder="ЛОГИН">
         <input type="password" id="password" placeholder="ПАРОЛЬ">
-        <button onclick="login()">ВОЙТИ / СОЗДАТЬ АККАУНТ</button>
+        <button id="auth-btn" onclick="login()">ВОЙТИ / ЗАРЕГИСТРИРОВАТЬСЯ</button>
     </div>
 
     <div id="main-screen" class="bank-ui hidden">
+        <div class="status" id="sync-indicator">СИНХРОНИЗИРОВАНО</div>
         <div class="card-visual" id="card-skin">
-            <div id="card-level" class="level-badge">STANDART</div>
-            <div style="font-size: 0.8rem; opacity: 0.6;">BLACK BANK DIGITAL</div>
+            <div id="card-level" style="position:absolute; right:15px; top:15px; font-size:0.7rem; border:1px solid; padding:2px 5px;">STANDART</div>
+            <div style="font-size:0.7rem; opacity:0.5;">BLACK BANK GLOBAL</div>
             <div class="card-num" id="card-display">0000 0000 0000 0000</div>
-            <div style="display:flex; justify-content: space-between; font-size: 0.7rem;">
-                <span id="owner-display">USER NAME</span>
-                <span>EXP: 01/30 | CVP: <span id="cvp-display">***</span></span>
-            </div>
+            <div id="owner-display" style="font-size: 0.8rem; text-transform: uppercase;">USER</div>
         </div>
 
-        <div class="balance-section">
-            <div style="font-size: 0.8rem; opacity: 0.5;">ТЕКУЩИЙ БАЛАНС</div>
-            <div id="balance">0.00₽</div>
-        </div>
-
-        <button onclick="makeAction('click')" id="click-btn" style="font-size: 1.2rem; height: 60px;">+1₽ ЗА КЛИК</button>
-        <button onclick="makeAction('risk')" style="color:#ffb300; border-color:#ffb300">РИСКОВАТЬ (±2₽)</button>
-
-        <div style="margin-top: 20px; border-top: 1px solid #222; padding-top: 10px;">
-            <div style="font-size: 0.7rem; margin-bottom: 5px;">БЫСТРЫЙ ПЕРЕВОД</div>
-            <input type="text" id="transfer-card" placeholder="НОМЕР КАРТЫ (0000...)">
+        <div id="balance">0.00₽</div>
+        <button onclick="makeAction('click')" id="click-btn">+1₽ ЗА КЛИК</button>
+        <button onclick="makeAction('risk')" style="color:#ffb300; border-color:#ffb300">РИСКНУТЬ (±2₽)</button>
+        
+        <div style="margin-top:15px; border-top:1px solid #222; padding-top:10px;">
+            <input type="text" id="transfer-card" placeholder="НОМЕР КАРТЫ ПОЛУЧАТЕЛЯ">
             <input type="number" id="transfer-amount" placeholder="СУММА ₽">
-            <button onclick="transfer()" style="border-color: #555;">ОТПРАВИТЬ ПЕРЕВОД</button>
-        </div>
-
-        <div class="market">
-            <button onclick="buyLevel('PLATINUM', 500)">UP: PLATINUM (500₽)</button>
-            <button onclick="buyLevel('GOLD', 2000)">UP: GOLD (2000₽)</button>
-            <button onclick="buyLevel('PREMIUM', 5000)">UP: PREMIUM (5000₽)</button>
-            <button onclick="logout()">ВЫЙТИ</button>
+            <button onclick="transfer()">ОТПРАВИТЬ ПЕРЕВОД</button>
         </div>
 
         <div class="history-box" id="history"></div>
+        
+        <div style="display:flex; gap:5px; margin-top:10px;">
+            <button onclick="buyLevel('PLATINUM', 500)" style="font-size:0.6rem;">UP: PLATINUM (500₽)</button>
+            <button onclick="buyLevel('GOLD', 2000)" style="font-size:0.6rem;">UP: GOLD (2000₽)</button>
+            <button onclick="buyLevel('PREMIUM', 5000)" style="font-size:0.6rem;">UP: PREMIUM (5000₽)</button>
+        </div>
     </div>
 </div>
 
 <script>
+    // КОНФИГУРАЦИЯ ОБЛАКА
+    const API_KEY = '$2a$10$.T8QWqx0fyuTKbwYEdlC/eZkjX4/hXM6G6UQyjHpl7vDTY/6KeILW';
+    const BIN_ID = '65b12a83dc74654054ba4f50'; // Если не работает, создай свой Bin на jsonbin.io
+    const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
     let currentAccount = null;
-    let users = {};
+    let allUsers = {};
+    let isSyncing = false;
 
-    // Live-обновление (каждую секунду проверяем изменения от других пользователей)
+    // Автоматическое обновление данных из облака каждые 3 секунды
     setInterval(() => {
-        if (!currentAccount) return;
-        users = JSON.parse(localStorage.getItem('bb_users')) || {};
-        saveAndRefresh(false); // Обновляем экран без записи в память
-    }, 1000);
+        if (currentAccount && !isSyncing) {
+            fetchData(false);
+        }
+    }, 3000);
 
-    function login() {
+    async function fetchData(showLoading = true) {
+        if (showLoading) document.getElementById('sync-indicator').innerText = "ОБМЕН ДАННЫМИ...";
+        try {
+            const res = await fetch(URL, {
+                headers: { "X-Master-Key": API_KEY }
+            });
+            const data = await res.json();
+            allUsers = data.record;
+            if (currentAccount) refreshUI();
+            document.getElementById('sync-indicator').innerText = "ОБЛАКО: СИНХРОНИЗИРОВАНО";
+        } catch (e) {
+            console.error("Ошибка загрузки:", e);
+            document.getElementById('sync-indicator').innerText = "ОШИБКА СВЯЗИ";
+        }
+    }
+
+    async function saveData() {
+        isSyncing = true;
+        document.getElementById('sync-indicator').innerText = "СОХРАНЕНИЕ...";
+        try {
+            await fetch(URL, {
+                method: 'PUT',
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": API_KEY
+                },
+                body: JSON.stringify(allUsers)
+            });
+            document.getElementById('sync-indicator').innerText = "ОБЛАКО: ОБНОВЛЕНО";
+        } catch (e) {
+            alert("Ошибка сохранения в облако!");
+        }
+        isSyncing = false;
+    }
+
+    async function login() {
         const u = document.getElementById('username').value.trim();
         const p = document.getElementById('password').value;
+        const btn = document.getElementById('auth-btn');
         if(!u || !p) return;
 
-        users = JSON.parse(localStorage.getItem('bb_users')) || {};
+        btn.disabled = true;
+        document.getElementById('cloud-status').innerText = "ПОДКЛЮЧЕНИЕ К БАЗЕ...";
 
-        if(!users[u]) {
-            users[u] = {
-                pass: p,
-                balance: 0,
-                level: 'STANDART',
-                cardNum: generateCardNum(),
-                cvp: Math.floor(100 + Math.random()*899),
+        await fetchData();
+
+        if(!allUsers[u]) {
+            allUsers[u] = {
+                pass: p, balance: 0, level: 'STANDART',
+                cardNum: Array.from({length: 4}, () => Math.floor(1000 + Math.random()*8999)).join(' '),
                 history: []
             };
-            localStorage.setItem('bb_users', JSON.stringify(users));
-        } else if(users[u].pass !== p) {
-            alert("Ошибка доступа: неверный пароль"); return;
+            await saveData();
+        } else if(allUsers[u].pass !== p) {
+            alert("Неверный пароль!");
+            btn.disabled = false;
+            return;
         }
-        
+
         currentAccount = u;
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('main-screen').classList.remove('hidden');
-        document.getElementById('owner-display').innerText = u.toUpperCase();
-        saveAndRefresh(true);
-    }
-
-    function generateCardNum() {
-        return Array.from({length: 4}, () => Math.floor(1000 + Math.random()*8999)).join(' ');
-    }
-
-    function getClickValue(level) {
-        if (level === 'PLATINUM') return 2;
-        if (level === 'GOLD') return 5;
-        if (level === 'PREMIUM') return 10;
-        return 1;
+        refreshUI();
     }
 
     function makeAction(type) {
-        users = JSON.parse(localStorage.getItem('bb_users'));
-        let me = users[currentAccount];
-
-        if (type === 'click') {
-            let gain = getClickValue(me.level);
-            me.balance += gain;
-            addHistory(`Клик: +${gain}₽`, 'plus');
-        } else if (type === 'risk') {
-            if (me.balance < 2) { alert("Минимум 2₽ для риска"); return; }
+        let me = allUsers[currentAccount];
+        if(type === 'click') {
+            let val = (me.level === 'PREMIUM' ? 10 : (me.level === 'GOLD' ? 5 : (me.level === 'PLATINUM' ? 2 : 1)));
+            me.balance += val;
+            addHistory(`+${val}₽ Клик`, 'plus');
+        } else {
+            if(me.balance < 2) return;
             let win = Math.random() > 0.5;
             me.balance += win ? 2 : -2;
-            addHistory(win ? "Риск: Успех +2₽" : "Риск: Провал -2₽", win ? 'plus' : 'minus');
+            addHistory(win ? "+2₽ Удача" : "-2₽ Риск", win ? 'plus' : 'minus');
         }
-        saveAndRefresh(true);
+        refreshUI();
+        saveData(); // Отправляем в облако
     }
 
     function transfer() {
-        users = JSON.parse(localStorage.getItem('bb_users'));
-        const targetNum = document.getElementById('transfer-card').value.trim();
-        const amount = parseFloat(document.getElementById('transfer-amount').value);
-        let me = users[currentAccount];
+        const targetNum = document.getElementById('transfer-card').value;
+        const amt = parseFloat(document.getElementById('transfer-amount').value);
+        let me = allUsers[currentAccount];
 
-        if (isNaN(amount) || amount <= 0) return;
-        if (me.balance < amount) { alert("Недостаточно средств"); return; }
+        if(me.balance < amt || isNaN(amt) || amt <= 0) return;
 
-        let targetKey = Object.keys(users).find(u => users[u].cardNum === targetNum);
-        
-        if (targetKey && targetKey !== currentAccount) {
-            me.balance -= amount;
-            users[targetKey].balance += amount;
+        let targetKey = Object.keys(allUsers).find(k => allUsers[k].cardNum === targetNum);
+        if(targetKey && targetKey !== currentAccount) {
+            me.balance -= amt;
+            allUsers[targetKey].balance += amt;
+            addHistory(`-${amt}₽ Перевод`, 'minus');
+            allUsers[targetKey].history.unshift({t: `+${amt}₽ Входящий`, c: 'plus', d: new Date().toLocaleTimeString()});
             
-            addHistory(`Перевод: -${amount}₽`, 'minus');
-            users[targetKey].history.unshift({t: `Входящий: +${amount}₽`, c: 'plus', d: new Date().toLocaleTimeString()});
-            
-            saveAndRefresh(true);
-            document.getElementById('transfer-amount').value = '';
-            alert("Транзакция завершена успешно");
+            refreshUI();
+            saveData();
+            alert("Перевод выполнен!");
         } else {
-            alert("Получатель не найден в системе");
+            alert("Карта не найдена");
         }
     }
 
     function buyLevel(lvl, price) {
-        users = JSON.parse(localStorage.getItem('bb_users'));
-        let me = users[currentAccount];
-        if (me.balance < price) { alert("Недостаточно средств для апгрейда"); return; }
-        
+        let me = allUsers[currentAccount];
+        if(me.balance < price) { alert("Недостаточно средств"); return; }
         me.balance -= price;
         me.level = lvl;
-        addHistory(`Уровень повышен: ${lvl}`, 'plus');
-        saveAndRefresh(true);
+        addHistory(`Апгрейд: ${lvl}`, 'plus');
+        refreshUI();
+        saveData();
     }
 
     function addHistory(text, type) {
-        users[currentAccount].history.unshift({
-            t: text,
-            c: type,
-            d: new Date().toLocaleTimeString()
-        });
-        if(users[currentAccount].history.length > 30) users[currentAccount].history.pop();
+        allUsers[currentAccount].history.unshift({t: text, c: type, d: new Date().toLocaleTimeString()});
+        if(allUsers[currentAccount].history.length > 10) allUsers[currentAccount].history.pop();
     }
 
-    function saveAndRefresh(shouldSave) {
-        if(shouldSave) localStorage.setItem('bb_users', JSON.stringify(users));
-        
-        const me = users[currentAccount];
-        if(!me) return;
-
-        // Обновление баланса LIVE
+    function refreshUI() {
+        const me = allUsers[currentAccount];
         document.getElementById('balance').innerText = me.balance.toFixed(2) + '₽';
         document.getElementById('card-display').innerText = me.cardNum;
-        document.getElementById('cvp-display').innerText = me.cvp;
+        document.getElementById('owner-display').innerText = currentAccount;
         document.getElementById('card-level').innerText = me.level;
         
-        const clickVal = getClickValue(me.level);
-        document.getElementById('click-btn').innerText = `ЗАРАБОТАТЬ +${clickVal}₽`;
+        let val = (me.level === 'PREMIUM' ? 10 : (me.level === 'GOLD' ? 5 : (me.level === 'PLATINUM' ? 2 : 1)));
+        document.getElementById('click-btn').innerText = `ЗАРАБОТАТЬ +${val}₽`;
 
-        // Визуал карты
-        const skin = document.getElementById('card-skin');
-        if(me.level === 'GOLD') { skin.style.borderColor = 'var(--gold)'; skin.style.boxShadow = '0 0 15px rgba(255,215,0,0.3)'; }
-        else if(me.level === 'PLATINUM') { skin.style.borderColor = 'var(--platinum)'; skin.style.boxShadow = '0 0 15px rgba(229,228,226,0.3)'; }
-        else if(me.level === 'PREMIUM') { skin.style.borderColor = 'var(--green)'; skin.style.boxShadow = '0 0 20px rgba(0,255,65,0.4)'; }
-
-        // Обновление истории
-        const histDiv = document.getElementById('history');
-        histDiv.innerHTML = me.history.map(i => `
-            <div class="hist-item">
-                <span class="${i.c}">${i.t}</span>
-                <span style="opacity:0.4">${i.d}</span>
+        document.getElementById('history').innerHTML = me.history.map(i => `
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #111; padding:2px 0;">
+                <span class="${i.c}">${i.t}</span> <span style="opacity:0.3">${i.d}</span>
             </div>
         `).join('');
     }
-
-    function logout() { location.reload(); }
 </script>
 </body>
 </html>
